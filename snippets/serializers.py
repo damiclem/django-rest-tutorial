@@ -2,6 +2,8 @@
 from rest_framework import serializers
 # Import snippet module
 from snippets.models import Snippet, LANGUAGE_CHOICES, STYLE_CHOICES
+# Import user module
+from django.contrib.auth.models import User
 
 
 # class SnippetSerializer(serializers.Serializer):
@@ -16,6 +18,10 @@ class SnippetSerializer(serializers.ModelSerializer):
     # linenos = serializers.BooleanField(required=False)
     # language = serializers.ChoiceField(choices=LANGUAGE_CHOICES, default='python')
     # style = serializers.ChoiceField(choices=STYLE_CHOICES, default='friendly')
+    # NOTE This allows to read owner's username
+    # The untyped ReadOnlyField is always read-only, and will be used for serialized representations,
+    # but will not be used for updating model instances when they are deserialized
+    owner = serializers.ReadOnlyField(source='owner.username')
 
     # Define meta-class
     # NOTE modelserializer is just a shurtcut for predefined fields (by model) and default create() and update() methods
@@ -23,7 +29,7 @@ class SnippetSerializer(serializers.ModelSerializer):
         # Define referenced model
         model = Snippet
         # Define fields in referenced model
-        fields = [ 'id', 'title', 'code', 'linenos', 'language', 'style' ]
+        fields = [ 'id', 'title', 'code', 'linenos', 'language', 'style', 'owner', ]
 
     # def create(self, validated_data):
     #     """
@@ -42,3 +48,17 @@ class SnippetSerializer(serializers.ModelSerializer):
     #     instance.style = validated_data.get('style', instance.style)
     #     instance.save()
     #     return instance
+
+
+# Define serialize for User
+class UserSerializer(serializers.ModelSerializer):
+    # Define snippets
+    snippets = serializers.PrimaryKeyRelatedField(many=True, queryset=Snippet.objects.all())
+
+
+    # Define metadata
+    class Meta:
+        # Define related model
+        model = User
+        # Define fields to serialize
+        fields = ['id', 'username', 'snippets']

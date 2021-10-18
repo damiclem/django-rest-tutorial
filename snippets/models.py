@@ -1,9 +1,13 @@
 # Define django models
 from django.db import models
+# Define HTML formatter
+from pygments.formatters.html import HtmlFormatter
 # Get lexicon handlers from pygments
-from pygments.lexers import get_all_lexers
+from pygments.lexers import get_all_lexers, get_lexer_by_name
 # Get styles from pygments
 from pygments.styles import get_all_styles
+# Define highlights
+from pygments import highlight
 
 
 # Define available parameters for lexicon
@@ -24,7 +28,29 @@ class Snippet(models.Model):
     linenos = models.BooleanField(default=False)
     language = models.CharField(choices=LANGUAGE_CHOICES, default='python', max_length=100)
     style = models.CharField(choices=STYLE_CHOICES, default='friendly', max_length=100)
+    # Define snippet owner
+    # NOTE Owner is the foreign key to an actual User
+    owner = models.ForeignKey('auth.User', related_name='snippets', on_delete=models.CASCADE)
+    # Define highlighted text
+    highlighted = models.TextField()
 
-    
+
+    def save(self, *args, **kwargs):
+        """
+        Use the `pygments` library to create a highlighted HTML
+        representation of the code snippet.
+        """
+        # Define lexer
+        lexer = get_lexer_by_name(self.language)
+        # Define attributes for snippet
+        linenos = 'table' if self.linenos else False
+        options = {'title': self.title} if self.title else {}
+        formatter = HtmlFormatter(style=self.style, linenos=linenos, full=True, **options)
+        # Set highlighted code
+        self.highlighted = highlight(self.code, lexer, formatter)
+        # Save snippet
+        super(Snippet, self).save(*args, **kwargs)
+
+
     class Meta:
         ordering = ['created']

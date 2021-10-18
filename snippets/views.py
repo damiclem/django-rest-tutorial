@@ -8,6 +8,9 @@ from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 # Define response module
 from rest_framework.response import Response
+# Define permissions module
+# NOTE it holds pre-defined classes useful for rescticting access to given views
+from rest_framework import permissions
 # Define response status handler
 from rest_framework import status
 # Define API View class
@@ -16,10 +19,12 @@ from rest_framework.views import APIView
 from rest_framework import mixins
 # Define generic objects for REST framework
 from rest_framework import generics
-# Define module for JSON parser
+# Deine module for User
+from django.contrib.auth.models import User
+# Define modules for snippets
 from snippets.models import Snippet
-# Define serializer for JSON parser
-from snippets.serializers import SnippetSerializer
+from snippets.permissions import IsOwnerOrReadOnly
+from snippets.serializers import SnippetSerializer, UserSerializer
 
 
 # # # NOTE Here CSFR protection is disabled, i.e. token is not requested
@@ -95,8 +100,18 @@ from snippets.serializers import SnippetSerializer
 
 # NOTE REST framework provides a lot of already MIXED-in generic views!
 class SnippetList(generics.ListCreateAPIView):
+    # Define query
     queryset = Snippet.objects.all()
+    # Define serializer
     serializer_class = SnippetSerializer
+    # Define permissions
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+
+    # NOTE Overriding this method allows to define how the instance save is managed
+    def perform_create(self, serializer):
+        # NOTE Owner gets passed to save method
+        serializer.save(owner=self.request.user)
 
 
 # # @csrf_exempt
@@ -179,5 +194,25 @@ class SnippetList(generics.ListCreateAPIView):
 
 
 class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
+    # Define query
     queryset = Snippet.objects.all()
+    # Define serializer
     serializer_class = SnippetSerializer
+    # Define permissions
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+
+
+# List users
+class UserList(generics.ListAPIView):
+    # Define query
+    queryset = User.objects.all()
+    # Define serializer
+    serializer_class = UserSerializer
+
+
+# Get details of an user
+class UserDetail(generics.RetrieveAPIView):
+    # Define query
+    queryset = User.objects.all()
+    # Define serializer
+    serializer_class = UserSerializer
