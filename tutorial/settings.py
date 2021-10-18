@@ -38,7 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'snippets.apps.SnippetsConfig'
+    # NOTE this is necessary to define TOKEN authentication
+    'rest_framework.authtoken',
+    'snippets.apps.SnippetsConfig',
+    'authentication.apps.AuthenticationConfig'
 ]
 
 MIDDLEWARE = [
@@ -123,6 +126,7 @@ STATIC_URL = '/static/'
 
 
 # Pagination
+# NOTE This allows to retrieve a maximum number of 10 documents for each call
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10
